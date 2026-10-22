@@ -833,7 +833,7 @@ color: #8d8d8d;
 
 #nav {
     margin-bottom: 0;
-    padding: 0 0 0px;
+    padding: 0 0 20px;
     background: none;
 }
 
@@ -844,7 +844,7 @@ color: #8d8d8d;
 }
 
 #nav.navbar {
-    margin-top: 0px;
+    margin-top: 27px;
 }
 
 #nav .navbar-brand img {
@@ -4940,7 +4940,4 @@ ul#doctors-grid.grid > li > .bio-box {
 .footer-area{
     display:none;
 }
-}
-
-.notification-boxes,.main-banner{
 }

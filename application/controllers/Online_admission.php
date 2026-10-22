@@ -31,7 +31,13 @@ class Online_admission extends Admin_Controller
             access_denied();
         }
 
-        $branchID = $this->application_model->get_branch_id();
+        $branchID = $this->input->get('branch_id');
+        if (empty($branchID)) {
+            $branchID = $this->application_model->get_branch_id();
+        } else {
+            $this->data['selected_branch_id'] = $branchID;
+        }
+        
         $getClassID = $this->input->get('class_id');
         if (!empty($getClassID)) {
             $this->data['students'] = $this->online_admission_model->getOnlineAdmission($getClassID, $branchID);
@@ -41,6 +47,7 @@ class Online_admission extends Admin_Controller
             $sectionID = $this->input->post('section_id');
             $this->data['students'] = $this->online_admission_model->getOnlineAdmission($classID, $branchID);
             $this->data['selected_class_id'] = $classID;
+            $this->data['selected_branch_id'] = $this->input->post('branch_id');
         }
         $this->data['branch_id'] = $branchID;
         $this->data['title'] = translate('student_list');
@@ -323,7 +330,7 @@ class Online_admission extends Admin_Controller
                 $this->sms_model->send_sms($arrayEnroll, 1);
 
                 set_alert('success', translate('information_has_been_saved_successfully'));
-                $url = base_url('online_admission/index?class_id=' . $post['class_id']);
+                $url = base_url('online_admission/index?branch_id=' . $post['branch_id'] . '&class_id=' . $post['class_id']);
                 $array = array('status' => 'success', 'url' => $url);
             } else {
                 $error = $this->form_validation->error_array();
@@ -436,5 +443,78 @@ class Online_admission extends Admin_Controller
         $filepath = "./uploads/online_ad_documents/" . $id;
         $data = file_get_contents($filepath);
         force_download($id, $data);
+    }
+
+    // Print admission form
+    public function print_form($admission_id = 0)
+    {
+        if (!get_permission('online_admission', 'is_view')) {
+            access_denied();
+        }
+
+        if (empty($admission_id)) {
+            show_404();
+            return;
+        }
+
+        // Get admission record with class and section names
+        $this->db->select('online_admission.*,branch.school_name,branch.address,branch.mobileno,branch.email as institute_email,class.name as class_name,section.name as section_name,student_category.name as category_name');
+        $this->db->from('online_admission');
+        $this->db->join('branch', 'branch.id = online_admission.branch_id', 'inner');
+        $this->db->join('class', 'class.id = online_admission.class_id', 'left');
+        $this->db->join('section', 'section.id = online_admission.section_id', 'left');
+        $this->db->join('student_category', 'student_category.id = online_admission.category_id', 'left');
+        $this->db->where('online_admission.id', $admission_id);
+        $admission = $this->db->get()->row_array();
+        
+        if (empty($admission)) {
+            show_404();
+            return;
+        }
+
+        // Get custom field values from online admission
+        $custom_fields = array();
+        $academic_info = array();
+        
+        $custom_values = $this->db->where('relid', $admission_id)->get('custom_fields_online_values')->result_array();
+        
+        if (!empty($custom_values)) {
+            // Get custom field definitions to get labels
+            $field_ids = array_column($custom_values, 'field_id');
+            $this->db->reset_query();
+            $this->db->where_in('id', $field_ids);
+            $custom_field_defs = $this->db->get('custom_field')->result_array();
+            
+            $field_labels = array();
+            foreach ($custom_field_defs as $def) {
+                $field_labels[$def['id']] = $def['field_label'];
+            }
+            
+            // Map values to fields
+            foreach ($custom_values as $cv) {
+                $field_id = $cv['field_id'];
+                $value = $cv['value'];
+                $custom_fields[$field_id] = $value;
+                
+                // Categorize as academic info if not field_id 7 or 8 (Birth Registration & National ID)
+                if ($field_id != 7 && $field_id != 8 && isset($field_labels[$field_id])) {
+                    $academic_info[$field_labels[$field_id]] = $value;
+                }
+            }
+        }
+
+        // Get school logo from report-card-logo
+        $logo_image = $this->application_model->getBranchImage($admission['branch_id'], 'report-card-logo');
+
+        // Prepare data for view
+        $data = array(
+            'admission' => $admission,
+            'custom_fields' => $custom_fields,
+            'academic_info' => $academic_info,
+            'logo_image' => $logo_image
+        );
+
+        // Load print view
+        $this->load->view('online_admission/admission_print', $data);
     }
 }

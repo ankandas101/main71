@@ -104,7 +104,7 @@
                                 </div>
                                 
                                 <div class="form-group">
-                                    <a href="https://kamalganjidealhighschool.edu.bd/" target="_self" class="btn btn-block btn-round">
+                                    <a href="https://tcti.edu.bd/" target="_self" class="btn btn-block btn-round">
                                         <i class="fas fa-home"></i> Home
                                     </a>
                                 </div>

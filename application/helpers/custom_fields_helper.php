@@ -318,3 +318,185 @@ function getOnlineCustomFields($belong_to, $branchID = '')
     $fields = $CI->db->get()->result_array();
     return $fields;
 }
+
+// Render online custom fields excluding specific field IDs
+function render_online_custom_fields_exclude($belongs_to, $exclude_ids = array(), $branch_id = null, $edit_id = false, $col_sm = null)
+{
+    $CI = &get_instance();
+    if (empty($branch_id)) {
+        $branch_id = $CI->application_model->get_branch_id();
+    }
+    if ($edit_id == false) {
+            $CI->db->select('custom_field.*,if(oaf.status is null, custom_field.status, oaf.status) as fstatus,if(oaf.required is null, custom_field.required, oaf.required) as required');
+            $CI->db->from('custom_field');
+            $CI->db->join('online_admission_fields as oaf', 'oaf.fields_id = custom_field.id and oaf.system = 0 and oaf.branch_id = ' . $branch_id, 'left');
+            $CI->db->where('custom_field.status', 1);
+            $CI->db->where('custom_field.form_to', $belongs_to);
+            $CI->db->where('custom_field.branch_id', $branch_id);
+            if (!empty($exclude_ids)) {
+                $CI->db->where_not_in('custom_field.id', $exclude_ids);
+            }
+            $CI->db->order_by('custom_field.field_order','asc');
+            $fields = $CI->db->get()->result_array();
+    } else {
+        $CI->db->select('*,status as fstatus');
+        $CI->db->from('custom_field');
+        $CI->db->where('form_to', $belongs_to);
+        $CI->db->where('branch_id', $branch_id);
+        if (!empty($exclude_ids)) {
+            $CI->db->where_not_in('id', $exclude_ids);
+        }
+        $CI->db->order_by('field_order','asc');
+        $fields = $CI->db->get()->result_array();
+    }
+
+    if (count($fields)) {
+        $html = '';
+        foreach ($fields as $field_key => $field) {
+            if ($field['fstatus'] == 1) {
+                $fieldLabel = ucfirst($field['field_label']);
+                $fieldType = $field['field_type'];
+                $bsColumn = $field['bs_column'];
+                $required = $field['required'];
+                $formTo = $field['form_to'];
+                $fieldID = $field['id'];
+
+                if ($bsColumn == '' || $bsColumn == 0) {
+                    $bsColumn == 12;
+                }
+                $value = $field['default_value'];
+
+                if ($edit_id !== false) {
+                    $return = get_online_custom_field_value($edit_id, $fieldID, $formTo);
+                    if (!empty($return)) {
+                        $value = $return;
+                    }
+                }
+
+                if(isset($_POST['custom_fields'][$formTo][$fieldID])) {
+                    $value = $_POST['custom_fields'][$formTo][$fieldID];
+                }
+
+                if ($fieldType != 'checkbox') {  
+                    $html .= '<div class="col-md-' . $bsColumn . ' mb-sm"><div class="form-group">';
+                    $html .= '<label class="control-label">' . $fieldLabel . ($required == 1 ? ' <span class="required">*</span>' : '') . '</label>';
+                    if ($fieldType == 'text' || $fieldType == 'number' || $fieldType == 'email') {
+                        $html .= '<input type="' . $fieldType . '" class="form-control" autocomplete="off" name="custom_fields[' . $formTo . '][' . $fieldID . ']" value="' . $value . '" />';
+                    }
+                    if ($fieldType == 'textarea') {
+                        $html .= '<textarea type="' . $fieldType . '" class="form-control" name="custom_fields[' . $formTo . '][' . $fieldID . ']">' . $value . '</textarea>';
+                    }
+                    if ($fieldType == 'dropdown') {
+                        $html .= '<select class="form-control" data-plugin-selectTwo data-width="100%" data-minimum-results-for-search="Infinity" name="custom_fields[' . $formTo . '][' . $fieldID . ']">';
+                        $html .= dropdownField($field['default_value'], $value);
+                        $html .= '</select>';
+                    }
+                    if ($fieldType == 'date') {
+                        $html .= '<input type="text" class="form-control" data-plugin-datepicker autocomplete="off" name="custom_fields[' . $formTo . '][' . $fieldID . ']" value="' . $value . '" />';
+                    }
+                    $html .= '<span class="error">' . form_error('custom_fields[' . $formTo . '][' . $fieldID . ']') . '</span>';
+                    $html .= '</div></div>';
+                } else {
+                    $html .= '<div class="col-md-' . $bsColumn . ' mb-sm"><div class="checkbox-replace">';
+                    $html .= '<label class="i-checks">';
+                    $html .= '<input type="checkbox" name="[' . $formTo . '][' . $fieldID . ']" value="1" ' . ($value == 1 ? 'checked' : '') . ' ><i></i>';
+                    $html .= $fieldLabel;
+                    $html .= '</label>';
+                    $html .= '</div></div>';
+                }
+            }
+        }
+        return $html;
+    } 
+}
+
+// Render only specific online custom fields by IDs
+function render_online_custom_fields_only($belongs_to, $only_ids = array(), $branch_id = null, $edit_id = false, $col_sm = null)
+{
+    $CI = &get_instance();
+    if (empty($branch_id)) {
+        $branch_id = $CI->application_model->get_branch_id();
+    }
+    if (empty($only_ids)) {
+        return '';
+    }
+    
+    if ($edit_id == false) {
+            $CI->db->select('custom_field.*,if(oaf.status is null, custom_field.status, oaf.status) as fstatus,if(oaf.required is null, custom_field.required, oaf.required) as required');
+            $CI->db->from('custom_field');
+            $CI->db->join('online_admission_fields as oaf', 'oaf.fields_id = custom_field.id and oaf.system = 0 and oaf.branch_id = ' . $branch_id, 'left');
+            $CI->db->where('custom_field.status', 1);
+            $CI->db->where('custom_field.form_to', $belongs_to);
+            $CI->db->where('custom_field.branch_id', $branch_id);
+            $CI->db->where_in('custom_field.id', $only_ids);
+            $CI->db->order_by('custom_field.field_order','asc');
+            $fields = $CI->db->get()->result_array();
+    } else {
+        $CI->db->select('*,status as fstatus');
+        $CI->db->from('custom_field');
+        $CI->db->where('form_to', $belongs_to);
+        $CI->db->where('branch_id', $branch_id);
+        $CI->db->where_in('id', $only_ids);
+        $CI->db->order_by('field_order','asc');
+        $fields = $CI->db->get()->result_array();
+    }
+
+    if (count($fields)) {
+        $html = '';
+        foreach ($fields as $field_key => $field) {
+            if ($field['fstatus'] == 1) {
+                $fieldLabel = ucfirst($field['field_label']);
+                $fieldType = $field['field_type'];
+                $bsColumn = $field['bs_column'];
+                $required = $field['required'];
+                $formTo = $field['form_to'];
+                $fieldID = $field['id'];
+
+                if ($bsColumn == '' || $bsColumn == 0) {
+                    $bsColumn == 12;
+                }
+                $value = $field['default_value'];
+
+                if ($edit_id !== false) {
+                    $return = get_online_custom_field_value($edit_id, $fieldID, $formTo);
+                    if (!empty($return)) {
+                        $value = $return;
+                    }
+                }
+
+                if(isset($_POST['custom_fields'][$formTo][$fieldID])) {
+                    $value = $_POST['custom_fields'][$formTo][$fieldID];
+                }
+
+                if ($fieldType != 'checkbox') {  
+                    $html .= '<div class="col-md-' . $bsColumn . ' mb-sm"><div class="form-group">';
+                    $html .= '<label class="control-label">' . $fieldLabel . ($required == 1 ? ' <span class="required">*</span>' : '') . '</label>';
+                    if ($fieldType == 'text' || $fieldType == 'number' || $fieldType == 'email') {
+                        $html .= '<input type="' . $fieldType . '" class="form-control" autocomplete="off" name="custom_fields[' . $formTo . '][' . $fieldID . ']" value="' . $value . '" />';
+                    }
+                    if ($fieldType == 'textarea') {
+                        $html .= '<textarea type="' . $fieldType . '" class="form-control" name="custom_fields[' . $formTo . '][' . $fieldID . ']">' . $value . '</textarea>';
+                    }
+                    if ($fieldType == 'dropdown') {
+                        $html .= '<select class="form-control" data-plugin-selectTwo data-width="100%" data-minimum-results-for-search="Infinity" name="custom_fields[' . $formTo . '][' . $fieldID . ']">';
+                        $html .= dropdownField($field['default_value'], $value);
+                        $html .= '</select>';
+                    }
+                    if ($fieldType == 'date') {
+                        $html .= '<input type="text" class="form-control" data-plugin-datepicker autocomplete="off" name="custom_fields[' . $formTo . '][' . $fieldID . ']" value="' . $value . '" />';
+                    }
+                    $html .= '<span class="error">' . form_error('custom_fields[' . $formTo . '][' . $fieldID . ']') . '</span>';
+                    $html .= '</div></div>';
+                } else {
+                    $html .= '<div class="col-md-' . $bsColumn . ' mb-sm"><div class="checkbox-replace">';
+                    $html .= '<label class="i-checks">';
+                    $html .= '<input type="checkbox" name="[' . $formTo . '][' . $fieldID . ']" value="1" ' . ($value == 1 ? 'checked' : '') . ' ><i></i>';
+                    $html .= $fieldLabel;
+                    $html .= '</label>';
+                    $html .= '</div></div>';
+                }
+            }
+        }
+        return $html;
+    } 
+}

@@ -231,7 +231,7 @@
                     <?php }} ?>
                     <!-- Website Content -->
                     <li>
-                        <a href="https://ctm.edu.bd/admin/login.php" target="_blank">
+                        <a href="https://tcti.edu.bd/admin/login.php" target="_blank">
                             <i class="fas fa-globe"></i><span>Website Content</span>
                         </a>
                     </li>

@@ -289,18 +289,51 @@
 					<?php } ?>
 				</div>
 
+				<!-- Custom Fields 7 & 8: Birth Registration & National ID -->
+				<div class="row">
+					<?php
+					$birth_reg = $this->db->where('id', 7)->where('branch_id', $branchID)->get('custom_field')->row_array();
+					$national_id = $this->db->where('id', 8)->where('branch_id', $branchID)->get('custom_field')->row_array();
+					?>
+					<?php if ((!empty($birth_reg) && $birth_reg['status'] == 1) || (!empty($national_id) && $national_id['status'] == 1)) { ?>
+						<?php if (!empty($birth_reg) && $birth_reg['status'] == 1) { 
+						$birth_reg_value = htmlspecialchars(set_value('custom_fields[student][7]', get_online_custom_field_value($stuDetails['id'], 7, 'student')), ENT_QUOTES, 'UTF-8');
+						?>
+						<div class="col-md-6 mb-sm">
+							<div class="form-group">
+								<label class="control-label"><?php echo htmlspecialchars($birth_reg['field_label'], ENT_QUOTES, 'UTF-8'); ?><?php echo $birth_reg['required'] == 1 ? ' <span class="required">*</span>' : ''; ?></label>
+								<input type="text" class="form-control" autocomplete="off" name="custom_fields[student][7]" value="<?php echo $birth_reg_value; ?>" />
+								<span class="error"></span>
+							</div>
+						</div>
+						<?php } if (!empty($national_id) && $national_id['status'] == 1) { 
+						$national_id_value = htmlspecialchars(set_value('custom_fields[student][8]', get_online_custom_field_value($stuDetails['id'], 8, 'student')), ENT_QUOTES, 'UTF-8');
+						?>
+						<div class="col-md-6 mb-sm">
+							<div class="form-group">
+								<label class="control-label"><?php echo htmlspecialchars($national_id['field_label'], ENT_QUOTES, 'UTF-8'); ?><?php echo $national_id['required'] == 1 ? ' <span class="required">*</span>' : ''; ?></label>
+								<input type="text" class="form-control" autocomplete="off" name="custom_fields[student][8]" value="<?php echo $national_id_value; ?>" />
+								<span class="error"></span>
+							</div>
+						</div>
+						<?php } ?>
+					<?php } ?>
+				</div>
+
 				<div class="row">
 					<?php 
-					$present_address = $this->student_fields_model->getStatus('present_address', $branchID);
-					$permanent_address = $this->student_fields_model->getStatus('permanent_address', $branchID);
-					$v = floatval($present_address['status']) + floatval($permanent_address['status']);
-					$div = ($v == 0) ? 12 : floatval(12 / $v);
+					$current_address = $this->student_fields_model->getOnlineStatus('present_address', $branchID);
+					$permanent_address = $this->student_fields_model->getOnlineStatus('permanent_address', $branchID);
+					$div = 6;
+					if ($current_address['status'] == 0 || $permanent_address['status'] == 0) {
+						$div = 12;
+					}
 
-					if ($present_address['status']) {
+					if ($current_address['status']) {
 						?>
 					<div class="col-md-<?php echo $div ?> mb-sm">
 						<div class="form-group">
-							<label class="control-label"><?=translate('present_address')?><?php echo $present_address['required'] == 1 ? ' <span class="required">*</span>' : ''; ?></label>
+							<label class="control-label"><?=translate('present_address')?><?php echo $current_address['required'] == 1 ? ' <span class="required">*</span>' : ''; ?></label>
 							<textarea name="current_address" rows="2" class="form-control" aria-required="true"><?=set_value('current_address', $stuDetails['present_address'])?></textarea>
 							<span class="error"></span>
 						</div>
@@ -317,8 +350,13 @@
 				</div>
 
 				<!--custom fields details-->
+				<div class="headers-line mt-3"><i class="fas fa-graduation-cap"></i> Previous Academic Information</div>
 				<div class="row" id="customFields">
-					<?php echo render_online_custom_fields('student', $stuDetails['branch_id'], $stuDetails['id']); ?>
+					<?php 
+					if (function_exists('render_online_custom_fields_exclude')) {
+						echo render_online_custom_fields_exclude('student', array(7, 8), $stuDetails['branch_id'], $stuDetails['id']); 
+					}
+					?>
 				</div>
 				
 				<div class="row">
@@ -665,14 +703,69 @@
 				</div>
 				<?php } ?>
 			</div>
-			<footer class="panel-footer">
+			<style>
+				html, body {
+					height: 100%;
+				}
+				/* Parent containers need height */
+				.row {
+					display: flex;
+					height: 100%;
+				}
+				.col-md-12 {
+					display: flex;
+					flex: 1;
+					height: 100%;
+				}
+				.panel {
+					display: flex;
+					flex-direction: column;
+					flex: 1;
+					border-radius: 4px;
+					overflow: hidden;
+				}
+				.panel-heading {
+					flex-shrink: 0;
+					padding: 15px 20px;
+					border-bottom: 1px solid #ddd;
+					background-color: #f5f5f5;
+				}
+				.panel-body {
+					flex: 1;
+					overflow-y: auto !important;
+					overflow-x: hidden;
+					padding: 15px 20px;
+				}
+				.panel-footer {
+					flex-shrink: 0;
+					border-top: 1px solid #ddd;
+					background-color: #f5f5f5;
+					padding: 15px 20px;
+				}
+				/* Custom scrollbar styling */
+				.panel-body::-webkit-scrollbar {
+					width: 12px;
+				}
+				.panel-body::-webkit-scrollbar-track {
+					background: #f1f1f1;
+					border-radius: 10px;
+				}
+				.panel-body::-webkit-scrollbar-thumb {
+					background: #555;
+					border-radius: 6px;
+				}
+				.panel-body::-webkit-scrollbar-thumb:hover {
+					background: #333;
+				}
+			</style>
+			<footer class="panel-footer" style="display: block; clear: both; width: 100%;">
 				<div class="row">
 					<div class="col-md-12">
 						<div class="pull-right">
 							<button onclick="history.go(-1);" class="btn btn btn-default mr-xs">
 								<i class="fas fa-arrow-left"></i> <?=translate('cancel')?>
 							</button>
-							<button type="submit" data-loading-text="<i class='fas fa-spinner fa-spin'></i> Processing" class="btn btn btn-default">
+							<button type="submit" name="approve" value="1" data-loading-text="<i class='fas fa-spinner fa-spin'></i> Processing" class="btn btn-primary btn-lg">
 								<i class="fas fa-plus-circle"></i> <?=translate('approved_and_enroll')?>
 							</button>
 						</div>

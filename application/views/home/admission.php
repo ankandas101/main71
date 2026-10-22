@@ -98,6 +98,25 @@
                         </div>
 
                         <div class="headers-line mt-3"><i class="fas fa-user-graduate"></i> Student Details</div>
+                        
+                        <?php
+                        $student_photo = $this->student_fields_model->getOnlineStatus('student_photo', $branchID); 
+                            if ($student_photo['status']) {
+                                ?>
+                        <div class="row">
+                            <div class="col-md-12 mb-sm">
+                                <div class="form-group">
+                                    <label for="message">Student Photo<?php echo $student_photo['required'] == 1 ? ' <span class="required">*</span>' : ''; ?></label>
+                                    <div class="custom-file">
+                                        <input type="file" name="student_photo" class="custom-file-input" id="photoFile" accept=".jpg,.jpeg,.png,.bmp" onchange="changeCustomUploader(this)">
+                                        <label class="custom-file-label" for="photoFile">Choose Photo file...</label>
+                                    </div>
+                                    <span class="error"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <?php } ?>
+
                         <div class="row">
                             <?php 
                             $last_name = $this->student_fields_model->getOnlineStatus('last_name', $branchID);
@@ -227,6 +246,32 @@
                             <?php } ?>
                         </div>
 
+                        <!-- Custom Fields 7 & 8: Birth Registration & National ID -->
+                        <div class="row">
+                            <?php
+                            $birth_reg = $this->db->where('id', 7)->where('branch_id', $branchID)->get('custom_field')->row_array();
+                            $national_id = $this->db->where('id', 8)->where('branch_id', $branchID)->get('custom_field')->row_array();
+                            ?>
+                            <?php if ((!empty($birth_reg) && $birth_reg['status'] == 1) || (!empty($national_id) && $national_id['status'] == 1)) { ?>
+                                <?php if (!empty($birth_reg) && $birth_reg['status'] == 1) { ?>
+                                <div class="col-md-6 mb-sm">
+                                    <div class="form-group">
+                                        <label class="control-label"><?php echo $birth_reg['field_label']; ?><?php echo $birth_reg['required'] == 1 ? ' <span class="required">*</span>' : ''; ?></label>
+                                        <input type="text" class="form-control" autocomplete="off" name="custom_fields[student][7]" value="<?php echo set_value('custom_fields[student][7]'); ?>" />
+                                        <span class="error"></span>
+                                    </div>
+                                </div>
+                                <?php } if (!empty($national_id) && $national_id['status'] == 1) { ?>
+                                <div class="col-md-6 mb-sm">
+                                    <div class="form-group">
+                                        <label class="control-label"><?php echo $national_id['field_label']; ?><?php echo $national_id['required'] == 1 ? ' <span class="required">*</span>' : ''; ?></label>
+                                        <input type="text" class="form-control" autocomplete="off" name="custom_fields[student][8]" value="<?php echo set_value('custom_fields[student][8]'); ?>" />
+                                        <span class="error"></span>
+                                    </div>
+                                </div>
+                                <?php } ?>
+                            <?php } ?>
+                        </div>
 
                         <?php
                         $current_address = $this->student_fields_model->getOnlineStatus('present_address', $branchID);
@@ -284,27 +329,12 @@
                         </div>
 
                         <!--custom fields details-->
+                        <div class="headers-line mt-3"><i class="fas fa-graduation-cap"></i> Previous Academic Information</div>
                         <div class="row" id="customFields">
-                            <?php echo render_online_custom_fields('student', $branchID); ?>
+                            <?php echo render_online_custom_fields_exclude('student', array(7, 8), $branchID); ?>
                         </div>
 
                         <?php
-                        $student_photo = $this->student_fields_model->getOnlineStatus('student_photo', $branchID); 
-                            if ($student_photo['status']) {
-                                ?>
-                        <div class="row">
-                            <div class="col-md-12 mb-sm">
-                                <div class="form-group">
-                                    <label for="message">Student Photo<?php echo $student_photo['required'] == 1 ? ' <span class="required">*</span>' : ''; ?></label>
-                                    <div class="custom-file">
-                                        <input type="file" name="student_photo" class="custom-file-input" id="photoFile" accept=".jpg,.jpeg,.png,.bmp" onchange="changeCustomUploader(this)">
-                                        <label class="custom-file-label" for="photoFile">Choose Photo file...</label>
-                                    </div>
-                                    <span class="error"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <?php }
                         $previous_school_details = $this->student_fields_model->getOnlineStatus('previous_school_details', $branchID); 
                         if ($previous_school_details['status']) {
                         ?>

@@ -105,11 +105,17 @@
 									$status = '<span class="text-danger">' . translate('declined') . '</span>';
 								echo ($status);
 								?></li>
+							<?php 
+							// Only show Payment Status if there's a payment amount configured
+							$hasPaymentFee = !empty($student['payment_amount']) && $student['payment_amount'] > 0;
+							if ($hasPaymentFee) {
+							?>
 							<li>Payment Status<?php if ($student['payment_status'] == 0) { ?>
 							    <span class="text-warning">Unpaid</span>
 							    <?php } else if ($student['payment_status'] == 1) { ?>
 							    <span class="text-success">Paid</span>
 							    <?php } ?></li>
+							<?php } ?>
 						</ul>
 
 						<table class="table table-condensed table-bordered" style="margin-top: 20px;">
@@ -133,6 +139,16 @@
 
 						<table class="table table-condensed table-bordered" style="margin-top: 20px;">
 							<tbody>
+								<tr>
+									<th style="width: 20%;">Student Photo</td>
+									<td colspan="5" style="text-align: center; padding: 10px;">
+										<?php if (!empty($student['student_photo'])) { ?>
+											<img src="<?=get_image_url('student', $student['student_photo'])?>" alt="Student Photo" style="max-width: 150px; max-height: 150px; border: 1px solid #ddd; padding: 5px;">
+										<?php } else { ?>
+											<span>No Photo Uploaded</span>
+										<?php } ?>
+									</td>
+								</tr>
 								<tr>
 									<th>First Name</td>
 									<td><?=$student['first_name']?></td>
@@ -258,7 +274,3 @@
         });
     });
 </script>
-
-
-
-

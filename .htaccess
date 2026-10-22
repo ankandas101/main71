@@ -9,16 +9,16 @@ Options -Indexes
 # -------------------------------------------------
 # Redirect ONLY root ( / ) to main site
 # -------------------------------------------------
-RewriteCond %{HTTP_HOST} ^app\.ctm\.edu\.bd$ [NC]
+RewriteCond %{HTTP_HOST} ^app\.kamalganjidealhighschool\.edu\.bd$ [NC]
 RewriteCond %{REQUEST_URI} ^/$
-RewriteRule ^ https://ctm.edu.bd/ [R=301,L]
+RewriteRule ^ https://kamalganjidealhighschool.edu.bd/ [R=301,L]
 
 # -------------------------------------------------
 # Redirect ONLY /home to main site
 # -------------------------------------------------
-RewriteCond %{HTTP_HOST} ^app\.ctm\.edu\.bd$ [NC]
+RewriteCond %{HTTP_HOST} ^app\.kamalganjidealhighschool\.edu\.bd$ [NC]
 RewriteCond %{REQUEST_URI} ^/home/?$
-RewriteRule ^ https://ctm.edu.bd/ [R=301,L]
+RewriteRule ^ https://kamalganjidealhighschool.edu.bd/ [R=301,L]
 
 # -------------------------------------------------
 # Allow payment gateway callbacks (IMPORTANT)

@@ -397,11 +397,63 @@ class Home extends Frontend_Controller
             set_alert('error', "This application was not found.");
             redirect($_SERVER['HTTP_REFERER']);
         }
-        $this->data['student'] = $getStudent;
-        $this->data['branchID'] = $this->data['student']['branch_id'];
-        $this->data['page_data'] = $this->home_model->get('front_cms_admission', array('branch_id' => $this->data['student']['branch_id']), true);
-        $this->data['main_contents'] = $this->load->view('home/admission_confirmation', $this->data, true);
-        $this->load->view('home/layout/index', $this->data);
+        
+        // Load data for new professional print form
+        $this->load->model('application_model');
+        $this->db->select('online_admission.*,branch.school_name,branch.address,branch.mobileno,branch.email as institute_email,class.name as class_name,section.name as section_name,student_category.name as category_name');
+        $this->db->from('online_admission');
+        $this->db->join('branch', 'branch.id = online_admission.branch_id', 'inner');
+        $this->db->join('class', 'class.id = online_admission.class_id', 'left');
+        $this->db->join('section', 'section.id = online_admission.section_id', 'left');
+        $this->db->join('student_category', 'student_category.id = online_admission.category_id', 'left');
+        $this->db->where('online_admission.reference_no', $referenceNo);
+        $admission = $this->db->get()->row_array();
+        
+        // Get custom field values from online admission
+        $custom_fields = array();
+        $academic_info = array();
+        if (!empty($admission)) {
+            $custom_values = $this->db->where('relid', $admission['id'])->get('custom_fields_online_values')->result_array();
+            
+            if (!empty($custom_values)) {
+                // Get custom field definitions to get labels
+                $field_ids = array_column($custom_values, 'field_id');
+                $this->db->reset_query();
+                $this->db->where_in('id', $field_ids);
+                $custom_field_defs = $this->db->get('custom_field')->result_array();
+                
+                $field_labels = array();
+                foreach ($custom_field_defs as $def) {
+                    $field_labels[$def['id']] = $def['field_label'];
+                }
+                
+                // Map values to fields
+                foreach ($custom_values as $cv) {
+                    $field_id = $cv['field_id'];
+                    $value = $cv['value'];
+                    $custom_fields[$field_id] = $value;
+                    
+                    // Categorize as academic info if not field_id 7 or 8 (Birth Registration & National ID)
+                    if ($field_id != 7 && $field_id != 8 && isset($field_labels[$field_id])) {
+                        $academic_info[$field_labels[$field_id]] = $value;
+                    }
+                }
+            }
+        }
+        
+        // Get school logo
+        $logo_image = !empty($admission) ? $this->application_model->getBranchImage($admission['branch_id'], 'report-card-logo') : '';
+        
+        // Prepare data for print form
+        $print_data = array(
+            'admission' => $admission,
+            'custom_fields' => $custom_fields,
+            'academic_info' => $academic_info,
+            'logo_image' => $logo_image
+        );
+        
+        // Load the professional print form
+        echo $this->load->view('online_admission/admission_print', $print_data, true);
     }
 
     public function contact()
