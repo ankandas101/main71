@@ -1,0 +1,36 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# -------------------------------------------------
+# Disable directory listing (security)
+# -------------------------------------------------
+Options -Indexes
+
+# -------------------------------------------------
+# Redirect ONLY root ( / ) to main site
+# -------------------------------------------------
+RewriteCond %{HTTP_HOST} ^app\.ctm\.edu\.bd$ [NC]
+RewriteCond %{REQUEST_URI} ^/$
+RewriteRule ^ https://ctm.edu.bd/ [R=301,L]
+
+# -------------------------------------------------
+# Redirect ONLY /home to main site
+# -------------------------------------------------
+RewriteCond %{HTTP_HOST} ^app\.ctm\.edu\.bd$ [NC]
+RewriteCond %{REQUEST_URI} ^/home/?$
+RewriteRule ^ https://ctm.edu.bd/ [R=301,L]
+
+# -------------------------------------------------
+# Allow payment gateway callbacks (IMPORTANT)
+# -------------------------------------------------
+RewriteCond %{REQUEST_URI} ^/(payment|ipn|callback|success|fail|cancel) [NC]
+RewriteRule ^ - [L]
+
+# -------------------------------------------------
+# Front Controller (PHP MVC / Laravel style)
+# -------------------------------------------------
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [L]
+
+</IfModule>
