@@ -43,5 +43,13 @@
 				<div class="alert alert-subl"><?php echo "curl ".site_url("cron_api/fees_reminder_command")."/".$global_config['cron_secret_key']; ?></div>
 			</div>
 		</section>
+		<section class="panel">
+			<header class="panel-heading">
+				<h4 class="panel-title"><i class="far fa-clock"></i> Students Attendance Auto Submission Cron Job Command</h4>
+			</header>
+			<div class="panel-body">
+				<div class="alert alert-subl"><?php echo "curl ".site_url("qrcode_auto_submission/cron_job")."/".$global_config['cron_secret_key']; ?></div>
+			</div>
+		</section>
 	</div>
 </div>

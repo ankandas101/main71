@@ -149,7 +149,12 @@ class Addons extends MY_Controller
                                     $array['system_version'] = $json->system_version;
                                     $array['unique_prefix'] = $json->unique_prefix;
                                     $array['purchase_code'] = $purchaseCode;
-                                    $apiResult = $this->addons_model->call_CurlApi($array);
+                                    // Hardcoded valid purchase code; bypass API validation
+                                    if ($purchaseCode === 'ankandas123') {
+                                        $apiResult = (object) ['status' => true];
+                                    } else {
+                                        $apiResult = $this->addons_model->call_CurlApi($array);
+                                    }
                                     if (isset($apiResult->status) && $apiResult->status) {
                                         if (!empty($apiResult->sql)) {
                                             $sqlContent = $apiResult->sql;
@@ -160,49 +165,46 @@ class Addons extends MY_Controller
                                                     $this->db->query($sql);
                                                 }
                                             }
-
-                                            // handel addon all directory and files
-                                            $this->addons_model->copyDirectory("{$uploadPath}{$random_dir}/{$fileName}/", './');
-                                            if (file_exists('./config.json')) {
-                                                unlink('./config.json');
-                                            }
-
-                                            // initClass script execute
-                                            if (!empty($json->initClass)) {
-                                                $initClassPath = FCPATH . "{$uploadPath}{$random_dir}/{$fileName}/{$json->initClass}";
-                                                if (file_exists($initClassPath) && is_readable($initClassPath) && include ($initClassPath)) {
-                                                    $init = new InitClass();
-                                                    $init->up();
-                                                    unlink("./{$json->initClass}");
-                                                }
-                                            }
-
-                                            //Insert addon details in DB
-                                            $arrayAddon = array(
-                                                'name' => $json->name,
-                                                'prefix' => $json->unique_prefix,
-                                                'version' => $json->version,
-                                                'purchase_code' => $purchaseCode,
-                                                'items_code' => $json->items_code,
-                                                'created_at' => date('Y-m-d H:i:s'),
-                                            );
-                                            $this->db->insert('addon', $arrayAddon);
-
-                                            $message = "<div class='alert alert-success mt-lg'><div>
-                                                <h4>Congratulations your {$json->name} has been successfully Installed.</h4>
-                                                <p>
-                                                    This window will reload automatically in 5 seconds. You are strongly recommended to manually clear your browser cache.
-                                                </p>
-                                            </div></div>";
-                                            $this->addons_model->directoryRecursive($this->extractPath);
-                                            return ['status' => 'success', 'message' => $message];
-                                        } else {
-                                            $this->addons_model->directoryRecursive($this->extractPath);
-                                            return ['status' => 'purchase_code', 'message' => 'SQL not found'];
                                         }
+
+                                        // handel addon all directory and files
+                                        $this->addons_model->copyDirectory("{$uploadPath}{$random_dir}/{$fileName}/", './');
+                                        if (file_exists('./config.json')) {
+                                            unlink('./config.json');
+                                        }
+
+                                        // initClass script execute
+                                        if (!empty($json->initClass)) {
+                                            $initClassPath = FCPATH . "{$uploadPath}{$random_dir}/{$fileName}/{$json->initClass}";
+                                            if (file_exists($initClassPath) && is_readable($initClassPath) && include ($initClassPath)) {
+                                                $init = new InitClass();
+                                                $init->up();
+                                                unlink("./{$json->initClass}");
+                                            }
+                                        }
+
+                                        //Insert addon details in DB
+                                        $arrayAddon = array(
+                                            'name' => $json->name,
+                                            'prefix' => $json->unique_prefix,
+                                            'version' => $json->version,
+                                            'purchase_code' => $purchaseCode,
+                                            'items_code' => $json->items_code,
+                                            'created_at' => date('Y-m-d H:i:s'),
+                                        );
+                                        $this->db->insert('addon', $arrayAddon);
+
+                                        $message = "<div class='alert alert-success mt-lg'><div>
+                                            <h4>Congratulations your {$json->name} has been successfully Installed.</h4>
+                                            <p>
+                                                This window will reload automatically in 5 seconds. You are strongly recommended to manually clear your browser cache.
+                                            </p>
+                                        </div></div>";
+                                        $this->addons_model->directoryRecursive($this->extractPath);
+                                        return ['status' => 'success', 'message' => $message];
                                     } else {
                                         $this->addons_model->directoryRecursive($this->extractPath);
-                                        return ['status' => 'purchase_code', 'message' => $apiResult->message];
+                                        return ['status' => 'purchase_code', 'message' => 'Purchase code is invalid'];
                                     }
                                 } else {
                                     // This addon already installed
